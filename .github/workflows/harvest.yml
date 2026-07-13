@@ -1,0 +1,54 @@
+name: Harvest new legal tasks
+
+on:
+  schedule:
+    - cron: "0 6 * * 1-5"   # weekdays, 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: harvest-tasks
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--max-turns 8"
+          prompt: |
+            You are updating this "awesome-legal-tasks" list.
+
+            Task: find open-source legal NLP tasks/benchmarks (classification,
+            extraction, QA, summarization, entailment, etc.) not already listed in
+            the "Tasks" table in README.md, and add them.
+
+            Sourcing rules (non-negotiable):
+            - Use only the Semantic Scholar API, Crossref API, and arXiv API for any
+              paper/citation lookups.
+            - Do NOT scrape Google Scholar. Do NOT use Sci-Hub. If you use any
+              third-party tool/library that bundles those as a code path, only call
+              its Semantic Scholar/Crossref/arXiv functions.
+            - You may check other public "awesome-*-legal-*" style GitHub lists for
+              task names you're missing, but verify each one yourself (a real paper
+              or repo defining the task, a real backing dataset) before adding it.
+
+            Content rules:
+            - For each new task, add one row: Name, Task type, Dataset(s) it's
+              backed by, Metric, Source link.
+            - If the task's backing dataset is in
+              https://github.com/TAU-Express/awesome-legal-datasets, link to that
+              entry; otherwise link to wherever the dataset is described.
+            - Do not remove or edit existing rows.
+            - Do not touch any file other than README.md.
+            - Keep the diff small — a few entries per run is fine.
+
+            Open a pull request with your changes. Do not merge it yourself.
